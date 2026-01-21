@@ -1,5 +1,6 @@
 import os
 import json
+#Creates main menu
 def main():
     while True:
         print("--Tasks List--")
@@ -7,8 +8,9 @@ def main():
         print("2. Add Task")
         print("3. Complete Task")
         print("4. Delete Task")
-        print("5. Save and Exit")
-        choice = input("Select 1-5: ")
+        print("5. Save and Continue")
+        print("6. Save and Exit")
+        choice = input("Select 1-6: ")
         if choice == "1":
             clear()
             view()        
@@ -24,17 +26,26 @@ def main():
         elif choice == "5":
             clear()
             save()
+            print("Saving")
+        elif choice == "6":
+            clear()
+            save()
             print("Saving and Exiting")
             break
         else:
             clear()
             print("Please select 1-5")
+#clears terminal to keep things tidy            
 def clear():
     if os.name == "nt":
         _ = os.system("cls")
     else:
         _ = os.system("clear")
+#prints a sorted/unsorted table of all tasks saved
 def view():
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    RESET = "\033[0m"
     column_map = {"1": 0, "2": 1, "3": "key"}
     choice = input("Sort by column (1=Due Date, 2=Completed, 3=Task Name): ")
     if choice in column_map:
@@ -50,67 +61,89 @@ def view():
     print("-" * 45)
     for key, values in sorted_tasks:
         due, complete = values
-        row = [due, complete, key]
+        formatted_complete = f"{str(complete):<15}"
+        formatted_due = f"{str(due):<15}"
+        formatted_key = f"{str(key):<15}"
+        if complete.lower() == "yes":
+            complete_display = f"{GREEN}{formatted_complete}{RESET}"
+        else:
+            complete_display = f"{RED}{formatted_complete}{RESET}"
+        row = [formatted_due, complete_display, formatted_key]
         print("".join(f"{str(item):<{15}}" for item in row))
+#creates new task entry with error handling        
 def add():
     while True:
-        print("q to go back")
-        user_task = input("Task title: ").strip()
-        if user_task == "":
-            print("Task cannot be empty!")
-        elif user_task == "q":
-            main()
-        else:
-            break
-    while True:
-        print("q to go back")
-        user_due = input("Due date: ").strip()
-        if user_due == "":
-            print("Due date cannot be empty!")
-        elif user_due == "q":
-            main()
-        else:
-            break
-    tasks[f"{user_task}"] = [f"{user_due}", "No"]
-    print(f"{user_task}: created and is due {user_due}")
+        while True:
+            print("q to go back")
+            user_task = input("Task title: ").strip()
+            if user_task == "":
+                print("Task cannot be empty!")
+            elif user_task == "q":
+                return
+            else:
+                break
+        while True:
+            print("q to go back")
+            user_due = input("Due date: ").strip()
+            if user_due == "":
+                print("Due date cannot be empty!")
+            elif user_due == "q":
+                return
+            else:
+                break
+        tasks[f"{user_task}"] = [f"{user_due}", "No"]
+        print(f"{user_task}: created and is due {user_due}")
+        add_more = input("Add another task? (y/n): ")
+        if add_more.lower() != "y":
+            return
+#marks task as completed    
 def complete():
-    keys_list = [*tasks]
-    print("q to go back")
-    print(keys_list)
-    user_complete = input("Taks to mark complete: ")
-    if user_complete in tasks:
-        tasks[user_complete][1] = "Yes"
-        print(f"{user_complete} has been marked complete!")
-    elif user_complete == "q":
-        clear()
-        main()
-    else:
-        clear()
-        print(f"{user_complete} does not exist!")
-        complete()
-def delete():
-    keys_list = [*tasks]
-    print("q to go back")
-    print(keys_list)
-    remove_task = input("Task to be deleted: ")
-    if remove_task in tasks:
-        confirm = input(f"Are you sure you wish to delete {remove_task}? (y/n):")
-        if confirm.lower() == "y":
-            tasks.pop(remove_task)
-            print(f"Deleting task {remove_task}")
+    while True:
+        keys_list = [*tasks]
+        print("q to go back")
+        print(keys_list)
+        user_complete = input("Taks to mark complete: ")
+        if user_complete in tasks:
+            tasks[user_complete][1] = "Yes"
+            print(f"{user_complete} has been marked complete!")
+        elif user_complete == "q":
+            clear()
+            main()
         else:
-            print("Deletion cancelled!")
-    elif remove_task == "q":
-        clear()
-        main()
-    else:
-        clear()
-        print(f"{remove_task} does not exist")
-        delete()
+            clear()
+            print(f"{user_complete} does not exist!")
+        complete_more = input("Complete another task? (y/n): ")
+        if complete_more.lower() != "y":
+            return        
+#Removes task from the list with a confimation        
+def delete():
+    while True:
+        keys_list = [*tasks]
+        print("q to go back")
+        print(keys_list)
+        remove_task = input("Task to be deleted: ")
+        if remove_task in tasks:
+            confirm = input(f"Are you sure you wish to delete {remove_task}? (y/n):")
+            if confirm.lower() == "y":
+                tasks.pop(remove_task)
+                print(f"Deleting task {remove_task}")
+            else:
+                print("Deletion cancelled!")
+        elif remove_task == "q":
+            clear()
+            main()
+        else:
+            clear()
+            print(f"{remove_task} does not exist")
+        delete_more = input("Delete more tasks? (y/n): ")
+        if delete_more.lower() != "y":
+            return        
+#saves dictionary to disk        
 def save():
     file_path = "tasks.json"
     with open(file_path, "w") as f:
         json.dump(tasks, f, indent=4)
+#loads dictionary from disk only if it exists
 if os.path.exists("tasks.json"):
     tasks = {}
     file_path = "tasks.json"
