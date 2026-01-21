@@ -113,6 +113,7 @@ def complete():
             clear()
             print(f"{user_complete} does not exist!")
         complete_more = input("Complete another task? (y/n): ")
+        clear()
         if complete_more.lower() != "y":
             return        
 #Removes task from the list with a confimation        
@@ -136,7 +137,8 @@ def delete():
             clear()
             print(f"{remove_task} does not exist")
         delete_more = input("Delete more tasks? (y/n): ")
-        if delete_more.lower() != "y":
+        clear()
+        if delete_more.lower() != "y":            
             return 
 def pause():
     input("\nPress Enter to return to the main menu...")
