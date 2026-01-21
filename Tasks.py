@@ -1,9 +1,10 @@
 import os
 import json
+from pathlib import Path
 #Creates main menu
 def main():
     while True:
-        print("--Tasks List--")
+        print(f"--Tasks List-- ({GREEN}{list_name}{RESET})")
         print("1. View Tasks")
         print("2. Add Task")
         print("3. Complete Task")
@@ -13,7 +14,8 @@ def main():
         choice = input("Select 1-6: ")
         if choice == "1":
             clear()
-            view()        
+            view()
+            pause()        
         elif choice == "2":
             clear()
             add()        
@@ -27,6 +29,7 @@ def main():
             clear()
             save()
             print("Saving")
+            pause()
         elif choice == "6":
             clear()
             save()
@@ -43,9 +46,6 @@ def clear():
         _ = os.system("clear")
 #prints a sorted/unsorted table of all tasks saved
 def view():
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    RESET = "\033[0m"
     column_map = {"1": 0, "2": 1, "3": "key"}
     choice = input("Sort by column (1=Due Date, 2=Completed, 3=Task Name): ")
     if choice in column_map:
@@ -137,16 +137,31 @@ def delete():
             print(f"{remove_task} does not exist")
         delete_more = input("Delete more tasks? (y/n): ")
         if delete_more.lower() != "y":
-            return        
+            return 
+def pause():
+    input("\nPress Enter to return to the main menu...")
+    clear()
+GREEN = "\033[92m"
+RED = "\033[91m"
+RESET = "\033[0m"
+clear()
+#scans for list files to load
+directory_path = Path("lists")
+directory_path.mkdir(exist_ok=True)
+json_list = [item.stem for item in directory_path.glob("*.json")]
+print(json_list)
+list_name = input("Select Task list to load (default:tasks): ").strip()
+if list_name == "":
+    list_name = "tasks"
+file_path = directory_path / Path(list_name.lower()).with_suffix(".json")
+clear()
 #saves dictionary to disk        
 def save():
-    file_path = "tasks.json"
     with open(file_path, "w") as f:
         json.dump(tasks, f, indent=4)
 #loads dictionary from disk only if it exists
-if os.path.exists("tasks.json"):
+if os.path.exists(file_path):
     tasks = {}
-    file_path = "tasks.json"
     with open(file_path, "r") as f:
         tasks = json.load(f)
 else:
