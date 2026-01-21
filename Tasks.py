@@ -35,11 +35,20 @@ def clear():
     else:
         _ = os.system("clear")
 def view():
+    column_map = {"1": 0, "2": 1, "3": "key"}
+    choice = input("Sort by column (1=Due Date, 2=Completed, 3=Task Name): ")
+    if choice in column_map:
+        if column_map[choice] == "key":
+            sorted_tasks = sorted(tasks.items(), key=lambda item: item[0])
+        else:
+            sorted_tasks = sorted(tasks.items(), key=lambda item: item[1][column_map[choice]])
+    else:
+        sorted_tasks = tasks.items()
     headers = ["Due Date", "Completed", "Task"]
     header_format = "{:<15} {:<15} {:<15}"
     print(header_format.format(*headers))
     print("-" * 45)
-    for key, values in tasks.items():
+    for key, values in sorted_tasks:
         due, complete = values
         row = [due, complete, key]
         print("".join(f"{str(item):<{15}}" for item in row))
