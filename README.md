@@ -7,7 +7,7 @@ Create, view, complete, and delete tasks.\
 Organize tasks by Due Date or Phase.\
 Store tasks in JSON files with automatic backups.\
 Sort tasks by columns and color-code completed tasks.\
-It’s lightweight, portable, and works entirely in the terminal.\
+It’s lightweight, portable, and works entirely in the terminal.
 
 Features
 
@@ -17,7 +17,7 @@ Delete tasks with confirmation.\
 Save and load multiple task lists.\
 Automatic backup system (.bak1, .bak2, .bak3) for corrupted files.\
 Color-coded task completion (Yes = green, No = red).\
-Supports sorting by Task Name, Due Date/Phase, or Completion status.\
+Supports sorting by Task Name, Due Date/Phase, or Completion status.
 
 Usage
 
@@ -26,7 +26,7 @@ Add Task: Add a new task with a due date or numeric phase.\
 Complete Task: Mark tasks as complete.\
 Delete Task: Remove tasks with confirmation.\
 Load new list: Switch between different JSON task lists.\
-Save and Continue / Save and Exit: Save changes to disk.\
+Save and Continue / Save and Exit: Save changes to disk.
 
 JSON Format
 
@@ -69,7 +69,7 @@ Backup System
 
 Saves automatically create backups: .bak1, .bak2, .bak3.\
 If the main file is corrupted, it will attempt to load the most recent valid backup.\
-Corrupted files are renamed with _CORRUPT_TIMESTAMP.json.\
+Corrupted files are renamed with _CORRUPT_TIMESTAMP.json.
 
 Requirements
 
