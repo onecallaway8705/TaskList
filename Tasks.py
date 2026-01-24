@@ -24,29 +24,65 @@ def pause():
     input("\nPress Enter to return to the main menu...")
     clear()
 
-def ensure_tasks():
+def ensure_tasks(state):
     # Returns True if tasks exists; otherwise prints message and returns False
-    if not tasks:
+    if not state["tasks"]:
         print("No tasks available.")
         pause()
         return False
     return True
 
+def select_task(tasks):
+    # Allows easier selection of task for completion and deletion
+    task_list = list(tasks.keys())
+
+    for i, task in enumerate(task_list, start=1):
+        print(f"{i}) {task}")
+
+    while True:
+        choice = input("Select task number (q to cancel): ").strip().lower()
+
+        if choice == "q":
+            return None
+        
+        if choice.isdigit():
+            index = int(choice) - 1
+
+            if 0 <= index <len(task_list):
+                return task_list[index]
+            
+        print("Invalid selection.")
+
 #----------------------
 # Core functions
 #----------------------
-def save():
-    # Saves list to disk
-    with open(file_path, "w") as f:
-        json.dump(tasks, f, indent=4)
+def save(state):
+    # Saves list to disk with backups
+    file_path = state["file_path"]
+    temp_path = file_path.with_suffix(".tmp")
+    backup1 = file_path.with_suffix(".bak1")
+    backup2 = file_path.with_suffix(".bak2")
+    backup3 = file_path.with_suffix(".bak3")
+    with open(temp_path, "w") as f:
+        json.dump(state["tasks"], f, indent=4)
+    if backup3.exists():
+        backup3.unlink()
+    if backup2.exists():
+        backup2.rename(backup3)
+    if backup1.exists():
+        backup1.rename(backup2)
+    if file_path.exists():
+        file_path.rename(backup1)
+    temp_path.rename(file_path)
 
-def load():
+def load(state):
     # Loads list from saves only if file exists
+    tasks = {}
     directory_path = Path("lists")
     directory_path.mkdir(exist_ok=True)
     json_list = [item.stem for item in directory_path.glob("*.json")]
     if json_list:
-        print("Available lists", ", ".join(json_list))
+        print("Available lists:", ", ".join(json_list))
     else:
         print("No saved lists found.")
     list_name = input("Select Task list to load/create (default:tasks): ").strip().lower()
@@ -55,32 +91,31 @@ def load():
     file_path = directory_path / Path(list_name).with_suffix(".json")
     clear()
     if file_path.exists():
-        tasks = {}
         try:
             with open(file_path, "r") as f:
                 tasks = json.load(f)
         except (json.JSONDecodeError, OSError):
             print("List file is corrupted. Starting empty.")
-            tasks = {}
             pause()
-    else:
-        tasks = {}
-    return file_path, list_name, tasks
+    state["tasks"] = tasks
+    state["file_path"] = file_path
+    state["list_name"] = list_name
+    
 
-def new_list():
+def new_list(state):
     # Loads new list after prompting for save
-    global file_path, list_name, tasks
     list_save = input("Save current changes? (y/N): ").strip().lower()
     if list_save == "y":
-        save()
-    file_path, list_name, tasks = load()
+        save(state)
+    load(state)
 
 #----------------------
-# Utility functions
+# Task Operations
 #----------------------
-def view():
+def view(state):
+    tasks = state["tasks"]
     # Prints tasks in a formatted sortable table
-    if not ensure_tasks():
+    if not ensure_tasks(state):
         return
     column_map = {"1": 0, "2": 1, "3": "key"}
     choice = input("Sort by column (1=Due Date, 2=Completed, 3=Task Name): ")
@@ -115,7 +150,8 @@ def view():
         print("".join(f"{str(item):<{15}}" for item in row))
     pause()
 
-def add():
+def add(state):
+    tasks = state["tasks"]
     # Adds new task entry to loaded list, prompts additional entries, and saves file
     while True:
         while True:
@@ -124,6 +160,7 @@ def add():
             if user_task == "":
                 print("Task cannot be empty!")
             elif user_task == "q":
+                clear()
                 return
             else:
                 break
@@ -133,6 +170,7 @@ def add():
             if user_due == "":
                 print("Due date cannot be empty!")
             elif user_due == "q":
+                clear()
                 return
             else:
                 break
@@ -141,64 +179,58 @@ def add():
         add_more = input("Add another task? (y/N): ").strip().lower()
         clear()
         if add_more != "y":
-            save()
+            save(state)
             return
         
-def complete():
+def complete(state):
+    tasks = state["tasks"]
     # Mark task as completed
-    if not ensure_tasks():
+    if not ensure_tasks(state):
         return
     while True:
-        print("q to go back")
-        print(", ".join(sorted(tasks)))
-        user_complete = input("Task to mark complete: ").strip().lower()
-        if user_complete in tasks:
-            tasks[user_complete][1] = "Yes"
-            print(f"{user_complete} has been marked complete!")
-            complete_more = input("Complete another task? (y/N): ").strip().lower()
-            clear()
-            if complete_more != "y":
-                return        
-        elif user_complete == "q":
+        print("\nSelect task to mark complete:")
+        task = select_task(tasks)
+        if task is None:
             clear()
             return
-        else:
-            clear()
-            print(f"{user_complete} does not exist!")
+        tasks[task][1] = "Yes"
+        print(f"{task} marked complete!")
+        more = input("Complete another task? (y/N): ").strip().lower()
+        clear()
+        if more != "y":
+            save(state)
+            return
 
-def delete():
+def delete(state):
+    tasks = state["tasks"]
     # Remove task entry from list with confirmation
-    if not ensure_tasks():
+    if not ensure_tasks(state):
         return
     while True:
-        print("q to go back")
-        print(", ".join(sorted(tasks)))
-        remove_task = input("Task to be deleted: ").strip().lower()
-        if remove_task in tasks:
-            confirm = input(f"Are you sure you wish to delete {remove_task}? (y/n):").strip().lower()
-            if confirm == "y":
-                tasks.pop(remove_task)
-                print(f"Deleting task {remove_task}")
-                delete_more = input("Delete more tasks? (y/N): ")
-                clear()
-                if delete_more != "y":            
-                    return 
-            else:
-                print("Deletion cancelled!")
-        elif remove_task == "q":
+        print("\nSelect task to delete:")
+        task = select_task(tasks)
+        if task is None:
             clear()
             return
+        confirm = input(f"Delete '{task}'? (y/N): ").strip().lower()
+        if confirm == "y":
+            tasks.pop(task)
+            print(f"{task} deleted.")
         else:
-            clear()
-            print(f"{remove_task} does not exist")
+            print("Deletion cancelled.")
+        more = input("Delete more tasks? (y/N): ")
+        clear()
+        if more != "y":  
+            save(state)          
+            return 
 
 #----------------------
 # Main Menu
 #----------------------
 
-def main():
+def main(state):
     while True:
-        print(f"--Tasks List-- ({GREEN}{list_name}{RESET})")
+        print(f"--Tasks List-- ({GREEN}{state['list_name']}{RESET})")
         print("1. View Tasks")
         print("2. Add Task")
         print("3. Complete Task")
@@ -209,26 +241,26 @@ def main():
         choice = input("Select 1-7: ")
         if choice == "1":
             clear()
-            view()      
+            view(state)      
         elif choice == "2":
             clear()
-            add()        
+            add(state)        
         elif choice == "3":
             clear()
-            complete()
+            complete(state)
         elif choice == "4":
             clear()
-            delete()
+            delete(state)
         elif choice == "5":
-            new_list()
+            new_list(state)
         elif choice == "6":
             clear()
-            save()
+            save(state)
             print("Saving")
             pause()
         elif choice == "7":
             clear()
-            save()
+            save(state)
             print("Saving and Exiting")
             break
         else:
@@ -240,5 +272,10 @@ def main():
 #----------------------
 
 clear()
-file_path, list_name, tasks = load()
-main()
+state = {
+    "tasks": {},
+    "file_path": None,
+    "list_name": None
+}
+load(state)
+main(state)
